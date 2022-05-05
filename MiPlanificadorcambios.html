@@ -409,7 +409,47 @@
 
         }
 
+        //OCULTAR FOTOGRAMAS
+        function esconderMostrarFotogramas(){
+            if(document.getElementById('switchFotogramas').checked){
+                fotograma.style.display='block'
+
+            }
+            else{
+                fotograma.style.display='none'
+            }
+
+
+
+        }
+
+        //OCULTAR FOTOCENTROS
+        function esconderMostrarFotocentros(){
+            if(document.getElementById('switchFotocentros').checked){
+                fotocentro.style.display='block'
+
+            }
+            else{
+                fotocentro.style.display='none'
+            }
+
+
+
+        }
         
+        // OCULTAR PATH
+        function esconderMostrarPath(){
+            if(document.getElementById('switchPath').checked){
+                dronePath.style.display='block'
+
+            }
+            else{
+                dronePath.style.display='none'
+            }
+
+
+
+        }
 
          
 
@@ -512,6 +552,21 @@
                                 <strong>Sidelap</strong><input id="Rsidelap" type="text" class="form-control margin-component" placeholder="Sidelap">
 
                                 <input type="button" value="Calcular misión" onclick="createmission()">
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="switchFotogramas" onclick="esconderMostrarFotogramas()" checked>
+                                    <label class="form-check-label" for="flexSwitchCheckChecked">Esconder/mostrar fotogramas</label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="switchFotocentros" onclick="esconderMostrarFotocentros()" checked>
+                                    <label class="form-check-label" for="flexSwitchCheckChecked">Esconder/mostrar fotocentros</label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="switchPath" onclick="esconderMostrarPath()" checked>
+                                    <label class="form-check-label" for="flexSwitchCheckChecked">Esconder/mostrar path</label>
+                                </div>
                             </div>
                         </div>
                     </div>
