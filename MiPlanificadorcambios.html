@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi planificador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="index.js"></script>
+    <link  href="index.css"rel="stylesheet">
+
+    <!--CÁLCULOS-->
+    <script>
+        var svgNS = "http://www.w3.org/2000/svg";
+        
+        function Resultados(){
+           
+            var alturavueloTxt=parseInt(document.getElementById('alturavuelo').value); 
+            var distanciafocalTxt=parseInt(document.getElementById("distanciafocal").value);
+            var altosensorTxt=parseInt(document.getElementById("altosensor").value);
+            var alturaf=((altosensorTxt*alturavueloTxt)/distanciafocalTxt);
+            document.getElementById("alturaf").value=alturaf;
+                        
+            var alturavueloTxt=parseInt(document.getElementById('alturavuelo').value);
+            var distanciafocalTxt=parseInt(document.getElementById("distanciafocal").value);
+            var anchosensorTxt=parseInt(document.getElementById("anchosensor").value);
+            var anchuraf=((anchosensorTxt*alturavueloTxt)/distanciafocalTxt);
+            document.getElementById("anchuraf").value=anchuraf;
+        
+            var anchurafTxt=parseInt(document.getElementById("anchuraf").value);
+            var anchopixelesTxt=parseInt(document.getElementById("columnasp").value);
+            var anchopixelesfoto=(anchurafTxt/anchopixelesTxt);
+            document.getElementById("anchopixelesfoto").value=anchopixelesfoto;
+                   
+            var alturafTxt=parseInt(document.getElementById("alturaf").value);
+            var altopixelesTxt=parseInt(document.getElementById("filasp").value);
+            var alturapixelesfoto=(alturafTxt/altopixelesTxt);
+            document.getElementById("alturapixelesfoto").value=alturapixelesfoto;
+
+            var ol=parseInt(document.getElementById("overlap").value);
+            var sl=parseInt(document.getElementById("sidelap").value);
+            var Roverlap=alturafTxt*(ol/100);
+            var Rsidelap=anchurafTxt*(sl/100);
+            document.getElementById("Roverlap").value=Roverlap;
+            document.getElementById("Rsidelap").value=Rsidelap;
+
+
+        }
+
+        let state="";
+        let backColor = '#000000';
+        let strokeColor = '#000000';
+        let fotocentro;
+        let fotograma;
+        let dronePath;
+        function fillState(_state, _stroke,_back){
+           state =_state;           
+           strokeColor=_stroke;
+           backColor=_back;
+        }
+
+        function getCoors(evt){
+            console.log(evt);
+            let xy = translateXY(evt.layerX,evt.layerY)
+            fillinTextBox(xy);
+            let x = xy[0];
+            let y = xy[1];
+
+            let circle=document.getElementById(state)
+            if (circle){
+                circle.setAttributeNS(null,"cx",x);
+                circle.setAttributeNS(null,"cy",y);
+            } else {
+                let rndCircle = document.createElementNS(svgNS,"circle");
+                rndCircle.setAttributeNS(null,"cx",x);
+                rndCircle.setAttributeNS(null,"cy",y);
+                rndCircle.setAttributeNS(null,"r",5);
+                rndCircle.setAttributeNS(null,"fill",backColor); //backcolor
+                rndCircle.setAttributeNS(null,"stroke",strokeColor);//strokecolor
+                rndCircle.setAttributeNS(null,"id",state);
+                document.getElementById("svgContainer").appendChild(rndCircle);
+            }
+           
+            paintPathId()         
+           
+        }
+        
+        
+
+        
+        function  fillinTextBox(xy){
+            if(state=="minimas"){
+                document.getElementById('xminima').value=xy[0]
+                document.getElementById('yminima').value=xy[1]
+            
+            }
+
+            if(state=="maximas"){
+                document.getElementById('xmaxima').value=xy[0]
+                document.getElementById('ymaxima').value=xy[1]
+            }
+
+            if(state=="tof"){
+                document.getElementById('tofx').value=xy[0]
+                document.getElementById('tofy').value=xy[1]
+            
+            }
+
+            if(state=="land"){
+                document.getElementById('landx').value=xy[0]
+                document.getElementById('landy').value=xy[1]
+            }        
+        }
+    
+        function translateXY(x,y){
+            svgArea = document.getElementById('svgContainer');
+            let vbox = svgArea.getAttribute('viewBox');
+            vbox = vbox.split(" ");
+            vbox = vbox.map(e => parseInt(e));
+            let newY = (parseFloat(vbox[3])/parseFloat(svgArea.getAttribute('height'))) * y
+            let newX = (parseFloat(vbox[2])/parseFloat(svgArea.getAttribute('width'))) * x
+            newX = newX + vbox[0]
+            newY = newY + vbox[1]
+          
+            let xt = [newX, newY];
+            return xt;
+        }
+
+        function changeViewBox(){
+            var SVGWidth=parseInt(document.getElementById("WidthVBox").value);
+            var SVGHeight=parseInt(document.getElementById("HeightVBox").value);
+            var xminima=parseInt(document.getElementById("xmin").value);
+            var yminima=parseInt(document.getElementById("ymin").value);
+            let vbox = `${xminima} ${yminima} ${SVGWidth} ${SVGHeight}`
+            var svgArea = document.getElementById('svgContainer');
+            svgArea.setAttribute("viewBox",vbox);
+        }
+        
+        function paintPathId(){
+            
+            
+            let xmini=parseInt(document.getElementById("xminima").value);
+            let ymini=parseInt(document.getElementById("yminima").value);
+            let xmaxi=parseInt(document.getElementById("xmaxima").value);
+            let ymaxi=parseInt(document.getElementById("ymaxima").value);
+
+            let _xmini = xmini
+            if(_xmini > xmaxi) {
+                xmini = xmaxi;
+                xmaxi = _xmini;
+            }
+
+            let _ymini = ymini
+            if (_ymini > ymaxi) {
+                ymini = ymaxi;
+                ymaxi = _ymini;
+            }
+            
+            const data = `M${xmini},${ymini} L${xmini},${ymaxi} L${xmaxi},${ymaxi} L${xmaxi},${ymini} Z`;
+            
+            let pathId='areaPath';
+            let AreaPath=document.getElementById(pathId)
+            if (AreaPath){
+                AreaPath.setAttributeNS(null,"d",data);
+            }
+            else {
+                AreaPath = document.createElementNS(svgNS,"path"); //to create a circle. for rectangle use "rectangle"
+                AreaPath.setAttributeNS(null,"id","areaPath");
+                AreaPath.setAttributeNS(null,"d",data);
+                AreaPath.setAttributeNS(null,"fill","none");
+                AreaPath.setAttributeNS(null,"stroke","red");
+                document.getElementById("svgContainer").appendChild(AreaPath);
+
+            }   
+
+        }
+          //CREACIÓN FOTOCENTRO
+        function paintFotocentro(x,y){
+
+            let fotocentro = document.createElementNS(svgNS,"circle");
+            fotocentro.setAttributeNS(null,"cx",x);
+            fotocentro.setAttributeNS(null,"cy",y);
+            fotocentro.setAttributeNS(null,"r",5);
+            fotocentro.setAttributeNS(null,"fill",backColor);
+            fotocentro.setAttributeNS(null,"stroke",strokeColor);
+            fotocentro.setAttributeNS(null,"id",state);
+            document.getElementById("svgContainer").appendChild(fotocentro);
+            return fotocentro;
+
+        }
+
+        //CREACIÓN FOTOGRAMA
+        function paintFotograma(x,y){
+
+            let xFotograma = x - parseFloat((document.getElementById('anchuraf').value)/2);
+            let yFotograma = y - parseFloat((document.getElementById('alturaf').value)/2);
+
+            let FotogramaWidth = parseFloat((document.getElementById('anchuraf').value));
+            let FotogramaHeight = parseFloat((document.getElementById('alturaf').value));
+
+            let fotograma = document.createElementNS(svgNS,"rect");
+            fotograma.setAttributeNS(null,"x",xFotograma);
+            fotograma.setAttributeNS(null,"y",yFotograma);
+            fotograma.setAttributeNS(null,"width",FotogramaWidth);
+            fotograma.setAttributeNS(null,"height",FotogramaHeight);
+            fotograma.setAttributeNS(null,"fill", "#00FFFF");
+            fotograma.setAttributeNS(null,"stroke","#3360FF"); 
+            fotograma.setAttributeNS(null,"id",state);
+
+
+            return fotograma;
+        }
+
+        
+        //CREACIÓN RECORRIDO DRONE
+        function createmission(){
+
+         
+            let xmin = parseInt(document.getElementById('xminima').value);
+            let ymin = parseInt(document.getElementById('yminima').value);
+            let xmax = parseInt(document.getElementById('xmaxima').value);
+            let ymax = parseInt(document.getElementById('ymaxima').value);
+            let  tofx =  parseInt(document.getElementById('tofx').value);
+            let  tofy =  parseInt(document.getElementById('tofy').value);
+            let  landx =  parseInt(document.getElementById('landx').value);
+            let  landy =  parseInt(document.getElementById('landy').value);
+
+            let _xmin = xmin
+            if(_xmin > xmax) {
+                xmin = xmax;
+                xmax = _xmin;
+            }
+
+            let _ymin = ymin
+            if(_ymin > ymax) {
+                ymin = ymax;
+                ymax = _ymin;
+            }
+
+
+            let puntos = [];
+            let x = xmin;
+            let y = ymin;
+            let distanciaSidelap=parseFloat(document.getElementById('Rsidelap').value);
+            let distanciaOverlap=parseFloat(document.getElementById('Roverlap').value);
+            let anchoFotografia=parseFloat(document.getElementById("anchuraf").value);
+            let altoFotografia=parseFloat(document.getElementById("alturaf").value);
+
+            let ascendente
+
+            puntos.push([tofx, tofy]);
+
+            stepHorizontal = anchoFotografia-distanciaSidelap;
+            stepVertical = altoFotografia-distanciaOverlap;
+
+            let distancia1  = []; //xmin ymin
+            let distancia2  = []; //xmin ymax
+            let distancia3  = []; //xmax ymin
+            let distancia4  = []; // xmax ymax
+            
+            distancia1 = Math.sqrt(Math.pow(xmin-tofx,2)+Math.pow(ymin-tofy,2));
+            distancia2 = Math.sqrt(Math.pow(xmin-tofx,2)+Math.pow(ymax-tofy,2));
+            distancia3 = Math.sqrt(Math.pow(xmax-tofx,2)+Math.pow(ymin-tofy,2));
+            distancia4 = Math.sqrt(Math.pow(xmax-tofx,2)+Math.pow(ymax-tofy,2));
+
+            fotocentro = document.createElementNS(svgNS,"g");
+            document.getElementById("svgContainer").appendChild(fotocentro);
+
+            fotograma= document.createElementNS(svgNS,"g");
+            document.getElementById("svgContainer").appendChild(fotograma);
+
+
+            if(distancia1<distancia2 && distancia1<distancia3 && distancia1<distancia4){ //xmin ymin
+                puntos.push([xmin,ymin]);
+                ascendente = false;
+                
+                for (let i=xmin ;i<xmax; i+= stepHorizontal){
+                    if (ascendente){
+                        for (let j=ymax;j>ymin; j-= stepVertical){
+                            x = i;
+                            y = j;
+                        
+                            puntos.push([x, y]);
+                            fotograma.appendChild(paintFotograma(x,y));
+                            fotocentro.appendChild(paintFotocentro(x,y));
+                        } 
+                    }else{
+                        for (let j=ymin;j<ymax; j+= stepVertical){
+                            x = i;
+                            y = j;
+                            
+                           puntos.push([x, y]);
+                           fotograma.appendChild(paintFotograma(x,y));
+                           fotocentro.appendChild(paintFotocentro(x,y));
+                        }
+                
+                    }
+                    ascendente = !ascendente;
+                   document.getElementById("svgContainer").appendChild(fotograma);
+                   document.getElementById("svgContainer").appendChild(fotocentro);
+
+                }
+            }else if(distancia2<distancia1 && distancia2<distancia3 && distancia2<distancia4){  //xmin ymax
+                puntos.push([xmin,ymax]);
+                ascendente = true;
+                for (let i=xmin ;i<xmax; i+= stepHorizontal){
+                    if (ascendente){
+                        for (let j=ymax;j>ymin; j-= stepVertical){
+                            x = i;
+                            y = j;
+                        
+                            puntos.push([x, y]);
+                           fotograma.appendChild(paintFotograma(x,y));
+                           fotocentro.appendChild(paintFotocentro(x,y));
+                        } 
+                    }else{
+                        for (let j=ymin;j<ymax; j+= stepVertical){
+                            x = i;
+                            y = j;
+                            
+                            puntos.push([x, y]);
+                           fotograma.appendChild(paintFotograma(x,y));
+                           fotocentro.appendChild(paintFotocentro(x,y));
+                        }
+                
+                    }
+                    ascendente = !ascendente;
+                   document.getElementById("svgContainer").appendChild(fotograma);
+                   document.getElementById("svgContainer").appendChild(fotocentro);
+
+                }
+            }else if(distancia3<distancia1 && distancia3<distancia2 && distancia3<distancia4){  //xmax ymin
+                puntos.push([xmax,ymin]);
+                ascendente = false;
+                for (let i=xmax ;i>xmin; i-= stepHorizontal){
+                    if (ascendente){
+                        for (let j=ymax;j>ymin; j-= stepVertical){
+                            x = i;
+                            y = j;
+                        
+                            puntos.push([x, y]);
+                            fotograma.appendChild(paintFotograma(x,y));
+                            fotocentro.appendChild(paintFotocentro(x,y));
+                        } 
+                    }else{
+                        for (let j=ymin;j<ymax; j+= stepVertical){
+                            x = i;
+                            y = j;
+                            
+                            puntos.push([x, y]);
+                            fotograma.appendChild(paintFotograma(x,y));
+                            fotocentro.appendChild(paintFotocentro(x,y));
+                        }
+                
+                    }
+                    ascendente = !ascendente;
+                    document.getElementById("svgContainer").appendChild(fotograma);
+                    document.getElementById("svgContainer").appendChild(fotocentro);
+                }
+
+            }else if(distancia4<distancia1 && distancia4<distancia2 && distancia4<distancia3){  //xmax ymax
+                puntos.push([xmax,ymax]);
+                ascendente = true;
+                for (let i=xmax ;i>xmin; i-= stepHorizontal){
+                    if (ascendente){
+                        for (let j=ymax;j>ymin; j-= stepVertical){
+                            x = i;
+                            y = j;
+                        
+                            puntos.push([x, y]);
+                            fotograma.appendChild(paintFotograma(x,y));
+                            fotocentro.appendChild(paintFotocentro(x,y));
+                        } 
+                    }else{
+                        for (let j=ymin;j<ymax; j+= stepVertical){
+                            x = i;
+                            y = j;
+                            
+                            puntos.push([x, y]);
+                            fotograma.appendChild(paintFotograma(x,y));
+                            fotocentro.appendChild(paintFotocentro(x,y));
+                        }
+                
+                    }
+                    ascendente = !ascendente;
+                    document.getElementById("svgContainer").appendChild(fotograma);
+                    document.getElementById("svgContainer").appendChild(fotocentro);
+                }   
+
+            }
+            puntos.push([landx,landy]);
+            paintpath(puntos);
+        }
+
+        function paintpath(puntos){
+
+            dronePath = document.createElementNS(svgNS,"path"); 
+            let data = `M ${puntos[0][0]},${puntos[0][1]} `; 
+            for(let i=1; i<puntos.length; i++){
+                data +=  `L ${puntos[i][0]},${puntos[i][1]}`
+            }
+
+            dronePath.setAttributeNS(null,"id","mycircle");
+            dronePath.setAttributeNS(null,"d",data);
+            dronePath.setAttributeNS(null,"fill","none");
+            dronePath.setAttributeNS(null,"stroke","red");
+            document.getElementById("svgContainer").appendChild(dronePath);
+
+        }
+
+        
+
+         
+
+    </script>
+</head>
+
+<body>
+    <!--Barra navegador-->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Planificador de misiones fotogramétricas con Drone</a>
+        </div>
+    </nav>
+    <!--Dividir en dos columnas con datos y mapa-->
+    <div class="container">
+        <div class="row">
+          <!--Columna de datos-->
+          <div class="col-4 bordes-negros"> <!--INICIO DATOS-->
+                <div class="accordion" id="accordionPanelsStayOpenExample">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="panelsStayOpen-headingOne">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="false" aria-controls="panelsStayOpen-collapseOne">
+                                Parámetros de vuelo
+                            </button>
+                        </h2>
+                        <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
+                            <div class="accordion-body">
+                                <strong>Bounding box</strong> 
+                                <input id="WidthVBox" type="text" class="form-control margin-component" placeholder="Ancho ViewBox">
+                                <input id="HeightVBox" type="text" class="form-control margin-component" placeholder="Alto ViewBox">
+                                <input id="xmin" type="text" class="form-control margin-component" placeholder="Xmin">
+                                <input id="ymin" type="text" class="form-control margin-component" placeholder="Ymin">
+                                <input type="button" value="Change View Box" onclick="changeViewBox()"><br>
+                                <strong>Otros</strong> 
+                                <!--CAJA-->
+                                <input id="alturavuelo" type="text" class="form-control margin-component" placeholder="Altura vuelo">
+                                <input type="text" id="xminima" onclick="fillState('minimas', '#FF0000', '#FF0000')" placeholder="X Mínima"><br>
+                                <input type="text" id="yminima" onclick="fillState('minimas', '#FF0000', '##FF0000')" placeholder="Y Mínima"><br>
+                                <input type="text" id="xmaxima" onclick="fillState('maximas', '#00FF00', '#00FF00')" placeholder="X Máxima"><br>
+                                <input type="text" id="ymaxima" onclick="fillState('maximas','#00FF00', '##00FF00')" placeholder="Y Máxima"><br>
+                                <!--PUNTOS DESPEGUE Y ATERRIZAJE-->
+                                <input type="text" id="tofx" onclick="fillState('tof', '#FF0000', '#FF0000')" placeholder="Take off X"><br>
+                                <input type="text" id="tofy" onclick="fillState('tof', '#FF0000', '##FF0000')" placeholder="Take off Y"><br>
+                                <input type="text" id="landx" onclick="fillState('land', '#00FF00', '#00FF00')" placeholder="Land X"><br>
+                                <input type="text" id="landy" onclick="fillState('land','#00FF00', '##00FF00')" placeholder="Land Y"><br>
+
+                            
+                            
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="panelsStayOpen-headingTwo">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
+                                Datos del sensor
+                            </button>
+                        </h2>
+                        <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
+                            <div class="accordion-body">
+                                <strong>Dimensiones sensor</strong> 
+                                <input id="distanciafocal" type="text" class="form-control margin-component" placeholder="Distancia focal">   
+                                <input id="anchosensor" type="text" class="form-control margin-component" placeholder="Ancho sensor">
+                                <input id="altosensor" type="text" class="form-control margin-component" placeholder="Alto sensor">
+                                <strong>Resolución</strong> 
+                                <input id="filasp" type="text" class="form-control margin-component" placeholder="Nº Filas Píxeles (Altura)">
+                                <input id="columnasp" type="text" class="form-control margin-component" placeholder="Nº Columnas Píxeles (Anchura)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="panelsStayOpen-headingThree">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
+                                Solape de las fotografías
+                            </button>
+                        </h2>
+                        <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree">
+                            <div class="accordion-body">
+                                <input id="overlap" type="text" class="form-control margin-component" placeholder="Overlap %">
+                                <input id="sidelap" type="text" class="form-control margin-component" placeholder="Sidelap %">
+                            </div>
+                        </div>
+                    </div>
+                    <!--RESULTADOS-->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="panelsStayOpen-headingFour">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseFour" aria-expanded="false" aria-controls="panelsStayOpen-collapseFour">
+                                RESULTADOS
+                            </button>
+                        </h2>
+                        <div id="panelsStayOpen-collapseFour" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingFour">
+                            <div class="accordion-body">
+                                
+                                <input type="button" value="Calcular valores" onclick="Resultados()">
+                                
+                                <br><br><strong>Altura fotografía</strong><input id="alturaf" type="text" class="form-control margin-component" placeholder="Altura fotografía">
+                                <strong>Anchura fotografía</strong><input id="anchuraf" type="text" class="form-control margin-component" placeholder="Anchura fotografía">
+                                <strong>Anchura pixeles fotografía</strong><input id="anchopixelesfoto" type="text" class="form-control margin-component" placeholder="Anchura pixeles fotografía">
+                                <strong>Altura pixeles fotografía</strong><input id="alturapixelesfoto" type="text" class="form-control margin-component" placeholder="Altura pixeles fotografía">
+                                <strong>Overlap</strong><input id="Roverlap" type="text" class="form-control margin-component" placeholder="Overlap">
+                                <strong>Sidelap</strong><input id="Rsidelap" type="text" class="form-control margin-component" placeholder="Sidelap">
+
+                                <input type="button" value="Calcular misión" onclick="createmission()">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+          </div> <!--FIN DATOS-->
+          
+          <!--Columna mapa-->
+          <div class="col-8 " style="background-color:#b4d2f5;">
+            
+             <svg width="800" height="600" viewbox="0 0 800 600" id="svgContainer" onclick="getCoors(evt)">
+                
+                                       
+             </svg>
+            
+           
+             <!--<iframe src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d48605.173705441965!2d-3.7027840273106674!3d40.41276383489091!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sgoogle%20maps!5e0!3m2!1ses!2ses!4v1645464148120!5m2!1ses!2ses" width="800" height="600" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+             <svg class="map-container"></svg>-->
+           </div>
+        </div> <!--Fin class="row"-->
+    </div>
+</body>
+</html>
